@@ -154,7 +154,7 @@ export default function StudentsPage() {
           </div>
           <button
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm whitespace-nowrap"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm whitespace-nowrap"
           >
             <Plus size={20} />
             <span>Add Student</span>
@@ -413,7 +413,7 @@ export default function StudentsPage() {
                 type="submit"
                 form="studentForm"
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-70 flex items-center justify-center shadow-sm"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-70 flex items-center justify-center shadow-sm"
               >
                 {isSubmitting ? (
                   <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
