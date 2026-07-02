@@ -16,6 +16,9 @@ interface Student {
   parentMobileNo: string;
   destination: string;
   routePreferred: string;
+  distance?: string;
+  busFare?: number;
+  paymentStatus?: 'Paid' | 'Not Paid';
 }
 
 interface Stop {
@@ -48,7 +51,9 @@ export default function StudentsPage() {
     parentName: "",
     parentMobileNo: "",
     destination: "",
-    routePreferred: ""
+    routePreferred: "",
+    distance: "",
+    paymentStatus: "Not Paid" as "Paid" | "Not Paid"
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -71,14 +76,34 @@ export default function StudentsPage() {
     }
   };
 
+  const calculateBusFare = (distanceStr: string | undefined): number | null => {
+    if (!distanceStr) return null;
+    const distance = parseFloat(distanceStr);
+    if (isNaN(distance) || distance <= 0) return null;
+    
+    if (distance <= 8) {
+      return 5500;
+    } else {
+      const extraDistance = distance - 8;
+      const steps = Math.ceil(extraDistance / 2.5);
+      return 5500 + (steps * 530);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const fare = calculateBusFare(formData.distance);
+      const dataToSave = {
+        ...formData,
+        busFare: fare
+      };
+
       if (editingId) {
-        await updateDocument("students", editingId, formData);
+        await updateDocument("students", editingId, dataToSave);
       } else {
-        await addDocument("students", formData);
+        await addDocument("students", dataToSave);
       }
       setIsModalOpen(false);
       resetForm();
@@ -112,7 +137,9 @@ export default function StudentsPage() {
       parentName: student.parentName || "",
       parentMobileNo: student.parentMobileNo || "",
       destination: student.destination || "",
-      routePreferred: student.routePreferred || ""
+      routePreferred: student.routePreferred || "",
+      distance: student.distance || "",
+      paymentStatus: student.paymentStatus || "Not Paid"
     });
     setEditingId(student.id);
     setIsModalOpen(true);
@@ -176,13 +203,16 @@ export default function StudentsPage() {
                   <th className="px-6 py-4 font-medium">Batch / Sem</th>
                   <th className="px-6 py-4 font-medium">Contact</th>
                   <th className="px-6 py-4 font-medium">Route</th>
+                  <th className="px-6 py-4 font-medium">Distance</th>
+                  <th className="px-6 py-4 font-medium">Bus Fare</th>
+                  <th className="px-6 py-4 font-medium">Payment</th>
                   <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
                       {searchTerm ? "No students found matching your search." : "No students found. Add one to get started."}
                     </td>
                   </tr>
@@ -206,6 +236,26 @@ export default function StudentsPage() {
                             {studentRoute?.routeName || "Not Assigned"}
                           </div>
                           <div className="text-xs text-slate-500 mt-1">Dest: {student.destination || "N/A"}</div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {student.distance ? `${student.distance} km` : "N/A"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {(() => {
+                            const fare = calculateBusFare(student.distance);
+                            return fare !== null ? `₹${fare}` : "N/A";
+                          })()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium border inline-block ${
+                              student.paymentStatus === 'Paid' 
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : 'bg-red-50 text-red-700 border-red-200'
+                            }`}
+                          >
+                            {student.paymentStatus === 'Paid' ? 'Paid' : 'Not Paid'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -351,7 +401,7 @@ export default function StudentsPage() {
                 {/* Transport Details */}
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">Transport Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Route Preferred</label>
                       <select
@@ -394,6 +444,33 @@ export default function StudentsPage() {
                           disabled={!!formData.routePreferred}
                         />
                       )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Distance (km)</label>
+                      <input
+                        type="text"
+                        value={formData.distance}
+                        onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g. 15"
+                      />
+                      {formData.distance && calculateBusFare(formData.distance) !== null && (
+                        <p className="text-xs text-green-600 mt-1 font-medium">
+                          Calculated Fare: ₹{calculateBusFare(formData.distance)}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Payment Status</label>
+                      <select
+                        required
+                        value={formData.paymentStatus}
+                        onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as 'Paid' | 'Not Paid' })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      >
+                        <option value="Not Paid">Not Paid</option>
+                        <option value="Paid">Paid</option>
+                      </select>
                     </div>
                   </div>
                 </div>
